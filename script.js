@@ -167,16 +167,25 @@ document.addEventListener('DOMContentLoaded', () => {
         clockEl.textContent = `${timeString} • ${dateString}`;
     }
 
+    // --- CORE LOGIC FUNCTIONS (Weather Section) ---
+
     function getLocationAndFetchWeather() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (position) => { getWeather(position.coords.latitude, position.coords.longitude); },
-                () => {
+                // Success Callback
+                (position) => {
+                    getWeather(position.coords.latitude, position.coords.longitude);
+                },
+                // Error Callback
+                (error) => {
+                    console.error(`Geolocation Error (${error.code}): ${error.message}`);
                     locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Bhopal, India (Default)`;
+                    // If permission is denied, fall back to Bhopal's weather
                     getWeather(23.2599, 77.4126);
                 }
             );
         } else {
+            console.log("Geolocation is not supported by this browser. Defaulting to Bhopal.");
             locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Bhopal, India (Default)`;
             getWeather(23.2599, 77.4126);
         }
@@ -186,22 +195,44 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Weather data not available');
+            if (!response.ok) {
+                throw new Error(`Weather API responded with status: ${response.status}`);
+            }
             const data = await response.json();
+            
             temperatureEl.textContent = `${Math.round(data.current.temperature_2m)}°C`;
             const weather = getWeatherDescription(data.current.weather_code, data.current.is_day);
             conditionEl.textContent = weather.text;
             document.querySelector('.weather-widget h2 i').className = weather.icon;
-            if (lat !== 23.2599) { locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`; }
-        } catch (error) { console.error("Weather fetch error:", error); temperatureEl.textContent = "Error"; }
+
+            // Only update the location text if it wasn't a fallback
+            if (lat !== 23.2599) {
+                 locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`;
+            }
+
+        } catch (error) {
+            console.error("Weather fetch error:", error);
+            temperatureEl.textContent = "N/A";
+            conditionEl.textContent = "Error";
+        }
     }
 
     function getWeatherDescription(code, isDay) {
+        // isDay = 1 for day, 0 for night. Handle night icons first.
         if (code <= 1 && !isDay) return { text: "Clear Night", icon: "fa-solid fa-moon" };
-        const descriptions = { 0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" }, 2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" }, 45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" }, 51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" }, 61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" }, };
+
+        const descriptions = {
+            0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" },
+            2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" },
+            45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" },
+            51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" },
+            61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" },
+            80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" },
+            95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" },
+        };
         return descriptions[code] || { text: "Unknown", icon: "fa-solid fa-question-circle" };
     }
-
+    
     function findNextUpcomingEvent() {
         const now = new Date();
         if (specialEvents.length === 0) return null;
