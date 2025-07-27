@@ -233,28 +233,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     async function init() {
-        updateTimeAndGreeting();
+        // Run time and weather updates immediately
+        updateTimeAndGreeting(); 
         setInterval(updateTimeAndGreeting, 1000);
         getLocationAndFetchWeather();
         setInterval(getLocationAndFetchWeather, 600000);
 
-        const [eventsRes, todosRes, backgroundRes] = await Promise.all([
-            fetch(`${backendUrl}/events`),
-            fetch(`${backendUrl}/todos`),
-            fetch(`${backendUrl}/background`)
-        ]);
+        // --- Fetch data from backend individually for robustness ---
 
-        specialEvents = await eventsRes.json();
-        todos = await todosRes.json();
-        const backgroundData = await backgroundRes.json();
-        
-        if (backgroundData.url) {
-            document.body.style.backgroundImage = `url(${backendUrl}${backgroundData.url})`;
+        // Fetch Events
+        try {
+            const eventsRes = await fetch(`${backendUrl}/events`);
+            specialEvents = await eventsRes.json();
+            startCountdown(); // Start countdown as soon as we have event data
+        } catch (error) {
+            console.error("Failed to fetch special events:", error);
+            startCountdown(); // Attempt to start countdown even on failure (will show 'No events')
         }
-        
-        renderTodos();
-        startCountdown();
+
+        // Fetch To-Dos
+        try {
+            const todosRes = await fetch(`${backendUrl}/todos`);
+            todos = await todosRes.json();
+            renderTodos(); // Render todos as soon as we have the data
+        } catch (error) {
+            console.error("Failed to fetch todos:", error);
+            renderTodos(); // Attempt to render even on failure (will show 'No tasks')
+        }
+
+        // Fetch Background
+        try {
+            const backgroundRes = await fetch(`${backendUrl}/background`);
+            const backgroundData = await backgroundRes.json();
+            if (backgroundData.url) {
+                document.body.style.backgroundImage = `url(${backendUrl}${backgroundData.url})`;
+            }
+        } catch (error) {
+            console.error("Failed to fetch background:", error);
+        }
     }
+    
     
     init();
 });
