@@ -1,20 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- CONFIGURATION ---
+    const backendUrl = 'http://127.0.0.1:5000';
     const userName = "Prachi";
     let countdownInterval;
 
-    // --- LOAD EVENTS FROM LOCAL STORAGE OR USE DEFAULTS ---
-    const defaultEvents = [
-        { name: "First Talk Anniversary", date: "2023-09-22" },
-        { name: "Her Birthday", date: "2004-01-06" },
-        { name: "My Birthday", date: "2004-09-29" },
-        { name: "Feelings Expressed Anniversary", date: "2023-11-08" },
-        { name: "She Proposed! Anniversary", date: "2023-11-24" },
-        { name: "First Met Anniversary", date: "2023-11-15" },
-        { name: "First Kiss Anniversary", date: "2024-05-05" }
-    ];
-    let specialEvents = JSON.parse(localStorage.getItem('specialEvents')) || defaultEvents;
+    // These will be populated from the backend
+    let specialEvents = [];
+    let todos = [];
 
     // --- ELEMENT SELECTORS (remains the same) ---
     const greetingEl = document.getElementById('greeting');
@@ -41,134 +33,69 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadBtn = document.getElementById('upload-btn');
     const photoUploadInput = document.getElementById('photo-upload');
 
-    // --- FUNCTIONS ---
-
-    function updateTimeAndGreeting() {
-        const now = new Date();
-        const hour = now.getHours();
-        const heart = '💖';
-        let greetingText;
-        if (hour < 12) {
-            greetingText = `${heart} Good Morning, ${userName}! ${heart} <i class="fa-solid fa-mug-hot"></i>`;
-        } else if (hour < 18) {
-            greetingText = `${heart} Good Afternoon, ${userName}! ${heart} <i class="fa-solid fa-sun"></i>`;
-        } else {
-            greetingText = `${heart} Good Evening, ${userName}! ${heart} <i class="fa-solid fa-moon"></i>`;
-        }
-        greetingEl.innerHTML = greetingText;
-        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        clockEl.textContent = `${timeString} • ${dateString}`;
+    // --- SYNC FUNCTIONS (NEW) ---
+    // These functions send the updated lists to the backend
+    async function syncTodos() {
+        await fetch(`${backendUrl}/todos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(todos)
+        });
     }
 
-    // --- NEW: Weather functions updated for dynamic location ---
-    function getLocationAndFetchWeather() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    // On success, get weather for detected coordinates
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    getWeather(lat, lon);
-                },
-                (error) => {
-                    // On error (e.g., user denies permission), fall back to Bhopal
-                    console.error("Geolocation error:", error.message);
-                    console.log("Could not get device location. Defaulting to Bhopal.");
-                    locationEl.textContent = "📍 Bhopal, India (Default)";
-                    getWeather(23.2599, 77.4126); // Bhopal coordinates
-                }
-            );
-        } else {
-            // If the browser doesn't support Geolocation, fall back to Bhopal
-            console.log("Geolocation is not supported by this browser. Defaulting to Bhopal.");
-            locationEl.textContent = "📍 Bhopal, India (Default)";
-            getWeather(23.2599, 77.4126); // Bhopal coordinates
-        }
+    async function syncEvents() {
+        await fetch(`${backendUrl}/events`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(specialEvents)
+        });
+        startCountdown(); // Recalculate countdown after updating events
     }
 
-    async function getWeather(lat, lon) {
-        try {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Weather data not available');
-            const data = await response.json();
-            
-            temperatureEl.textContent = `${Math.round(data.current.temperature_2m)}°C`;
-            const weather = getWeatherDescription(data.current.weather_code, data.current.is_day);
-            conditionEl.textContent = weather.text;
-            document.querySelector('.weather-widget h2 i').className = weather.icon;
-            
-            // This part is for display only; Geocoding reverse is complex
-            locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`;
 
-        } catch (error) { 
-            console.error("Weather fetch error:", error); 
-            temperatureEl.textContent = "Error";
-        }
-    }
+    // --- RENDERING AND EVENT HANDLING FUNCTIONS (UPDATED) ---
 
-    function getWeatherDescription(code, isDay) {
-        // isDay = 1 for day, 0 for night
-        if (code <= 1 && !isDay) return { text: "Clear Night", icon: "fa-solid fa-moon" };
-
-        const descriptions = {
-            0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" },
-            2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" },
-            45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" },
-            51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" },
-            61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" },
-            80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" },
-            95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" },
-        };
-        return descriptions[code] || { text: "Unknown", icon: "fa-solid fa-question-circle" };
-    }
-    
-    // All other functions (findNextUpcomingEvent, startCountdown, modals, etc.) remain exactly the same as the previous version.
-    // ...
-    function findNextUpcomingEvent() {
-        const now = new Date();
-        if (specialEvents.length === 0) return null;
-        return specialEvents.map(event => {
-            const eventDate = new Date(event.date + 'T00:00:00');
-            eventDate.setFullYear(now.getFullYear());
-            if (eventDate < now) eventDate.setFullYear(now.getFullYear() + 1);
-            return { ...event, futureDate: eventDate };
-        }).sort((a, b) => a.futureDate - b.futureDate)[0];
-    }
-
-    function startCountdown() {
-        if (countdownInterval) clearInterval(countdownInterval);
-        const nextEvent = findNextUpcomingEvent();
-
-        if (!nextEvent) {
-            eventTitleEl.textContent = "No Upcoming Events";
-            eventDateEl.textContent = "Add a special date!";
-            [daysEl, hoursEl, minsEl, secsEl].forEach(el => el.textContent = '0');
+    // To-Do functions now call syncTodos() after every change
+    function renderTodos() {
+        todoList.innerHTML = '';
+        if (todos.length === 0) {
+            todoList.innerHTML = '<li>No tasks yet. Add one above!</li>';
             return;
         }
-
-        eventTitleEl.textContent = nextEvent.name;
-        eventDateEl.textContent = nextEvent.futureDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-        
-        const update = () => {
-            const diff = nextEvent.futureDate - new Date();
-            if (diff <= 0) { startCountdown(); return; }
-            daysEl.textContent = Math.floor(diff / 86400000);
-            hoursEl.textContent = Math.floor((diff % 86400000) / 3600000).toString().padStart(2, '0');
-            minsEl.textContent = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-            secsEl.textContent = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        };
-        update();
-        countdownInterval = setInterval(update, 1000);
+        todos.forEach((todo, index) => {
+            const li = document.createElement('li');
+            li.textContent = todo.text;
+            li.className = todo.completed ? 'completed' : '';
+            li.onclick = () => {
+                todos[index].completed = !todos[index].completed;
+                renderTodos();
+                syncTodos(); // Sync on toggle
+            };
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                todos.splice(index, 1);
+                renderTodos();
+                syncTodos(); // Sync on delete
+            };
+            li.appendChild(deleteBtn);
+            todoList.appendChild(li);
+        });
     }
-    
-    function saveAndRefreshEvents() {
-        localStorage.setItem('specialEvents', JSON.stringify(specialEvents));
-        renderEventsList();
-        startCountdown();
-    }
+    todoForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = todoInput.value.trim();
+        if (text) {
+            todos.push({ text: text, completed: false });
+            renderTodos();
+            syncTodos(); // Sync on add
+            todoInput.value = '';
+        }
+    });
 
+    // Events modal functions now call syncEvents() after every change
     function renderEventsList() {
         eventsListEl.innerHTML = '';
         if (specialEvents.length === 0) {
@@ -183,92 +110,104 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.className = 'delete-btn';
             deleteBtn.onclick = () => {
                 specialEvents.splice(index, 1);
-                saveAndRefreshEvents();
+                renderEventsList();
+                syncEvents(); // Sync on delete
             };
             li.appendChild(deleteBtn);
             eventsListEl.appendChild(li);
         });
     }
-
     addEventForm.addEventListener('submit', (e) => {
         e.preventDefault();
         if (newEventNameInput.value.trim() && newEventDateInput.value) {
             specialEvents.push({ name: newEventNameInput.value.trim(), date: newEventDateInput.value });
-            saveAndRefreshEvents();
+            renderEventsList();
+            syncEvents(); // Sync on add
             addEventForm.reset();
         }
     });
 
+
+    // --- INITIALIZATION (UPDATED TO FETCH ALL DATA) ---
+    async function init() {
+        // Fetch all data from the backend in parallel
+        const [eventsRes, todosRes, backgroundRes] = await Promise.all([
+            fetch(`${backendUrl}/events`),
+            fetch(`${backendUrl}/todos`),
+            fetch(`${backendUrl}/background`)
+        ]);
+
+        specialEvents = await eventsRes.json();
+        todos = await todosRes.json();
+        const backgroundData = await backgroundRes.json();
+        
+        // Now that we have the data, render everything
+        if (backgroundData.url) {
+            document.body.style.backgroundImage = `url(${backendUrl}${backgroundData.url})`;
+        }
+        
+        renderTodos();
+        startCountdown();
+        
+        // Other initializations
+        updateTimeAndGreeting(); 
+        setInterval(updateTimeAndGreeting, 1000);
+        getLocationAndFetchWeather();
+        setInterval(getLocationAndFetchWeather, 600000);
+    }
+    
+    // All other functions (weather, countdown logic, background upload, etc.) can remain the same
+    // (Ensure they are present in your file from the previous steps)
+    function getLocationAndFetchWeather() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    getWeather(position.coords.latitude, position.coords.longitude);
+                },
+                () => {
+                    console.log("Could not get device location. Defaulting to Bhopal.");
+                    locationEl.textContent = "📍 Bhopal, India (Default)";
+                    getWeather(23.2599, 77.4126); // Bhopal coordinates
+                }
+            );
+        } else {
+            console.log("Geolocation is not supported. Defaulting to Bhopal.");
+            locationEl.textContent = "📍 Bhopal, India (Default)";
+            getWeather(23.2599, 77.4126); // Bhopal coordinates
+        }
+    }
+    async function getWeather(lat, lon) {
+        try {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Weather data not available');
+            const data = await response.json();
+            temperatureEl.textContent = `${Math.round(data.current.temperature_2m)}°C`;
+            const weather = getWeatherDescription(data.current.weather_code, data.current.is_day);
+            conditionEl.textContent = weather.text;
+            document.querySelector('.weather-widget h2 i').className = weather.icon;
+            if (lat !== 23.2599) { locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`; }
+        } catch (error) { console.error("Weather fetch error:", error); temperatureEl.textContent = "Error"; }
+    }
+    function getWeatherDescription(code, isDay) {
+        if (code <= 1 && !isDay) return { text: "Clear Night", icon: "fa-solid fa-moon" };
+        const descriptions = { 0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" }, 2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" }, 45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" }, 51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" }, 61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" }, };
+        return descriptions[code] || { text: "Unknown", icon: "fa-solid fa-question-circle" };
+    }
+    function findNextUpcomingEvent() {
+        const now = new Date();
+        if (specialEvents.length === 0) return null;
+        return specialEvents.map(event => { const eventDate = new Date(event.date + 'T00:00:00'); eventDate.setFullYear(now.getFullYear()); if (eventDate < now) eventDate.setFullYear(now.getFullYear() + 1); return { ...event, futureDate: eventDate }; }).sort((a, b) => a.futureDate - b.futureDate)[0];
+    }
+    function startCountdown() { if (countdownInterval) clearInterval(countdownInterval); const nextEvent = findNextUpcomingEvent(); if (!nextEvent) { eventTitleEl.textContent = "No Upcoming Events"; eventDateEl.textContent = "Add a special date!"; [daysEl, hoursEl, minsEl, secsEl].forEach(el => el.textContent = '0'); return; } eventTitleEl.textContent = nextEvent.name; eventDateEl.textContent = nextEvent.futureDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); const update = () => { const diff = nextEvent.futureDate - new Date(); if (diff <= 0) { startCountdown(); return; } daysEl.textContent = Math.floor(diff / 86400000); hoursEl.textContent = Math.floor((diff % 86400000) / 3600000).toString().padStart(2, '0'); minsEl.textContent = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0'); secsEl.textContent = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0'); }; update(); countdownInterval = setInterval(update, 1000); }
     settingsBtn.addEventListener('click', () => { renderEventsList(); modalContainer.style.display = 'flex'; });
     closeModalBtn.addEventListener('click', () => { modalContainer.style.display = 'none'; });
     modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) modalContainer.style.display = 'none'; });
-    
-    let todos = JSON.parse(localStorage.getItem('todos')) || [];
-    function saveTodos() { localStorage.setItem('todos', JSON.stringify(todos)); }
-    function renderTodos() {
-        todoList.innerHTML = '';
-        if (todos.length === 0) {
-            todoList.innerHTML = '<li>No tasks yet. Add one above!</li>';
-            return;
-        }
-        todos.forEach((todo, index) => {
-            const li = document.createElement('li');
-            li.textContent = todo.text;
-            li.className = todo.completed ? 'completed' : '';
-            li.onclick = () => { todos[index].completed = !todos[index].completed; saveTodos(); renderTodos(); };
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = (e) => { e.stopPropagation(); todos.splice(index, 1); saveTodos(); renderTodos(); };
-            li.appendChild(deleteBtn);
-            todoList.appendChild(li);
-        });
-    }
-    todoForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const text = todoInput.value.trim();
-        if (text) { todos.push({ text: text, completed: false }); saveTodos(); renderTodos(); todoInput.value = ''; }
-    });
     uploadBtn.addEventListener('click', () => photoUploadInput.click());
-    photoUploadInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                localStorage.setItem('userBackgroundImage', reader.result);
-                document.body.style.backgroundImage = `url(${reader.result})`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    function loadBackgroundImage() {
-        // This is your new permanent, custom background URL from Imgur/Postimage
-        const customPermanentBackground = 'https://i.postimg.cc/1XtJzqq0/us1234.jpg'; // <-- PASTE YOUR DIRECT LINK HERE
-
-        const locallyUploadedImage = localStorage.getItem('userBackgroundImage');
-
-        if (locallyUploadedImage) {
-            // If the user has uploaded an image on THIS device, use it.
-            document.body.style.backgroundImage = `url(${locallyUploadedImage})`;
-        } else if (customPermanentBackground) {
-            // Otherwise, use your custom permanent background.
-            document.body.style.backgroundImage = `url(${customPermanentBackground})`;
-        }
-        // If neither exists, it will use the default from the CSS file.
-    }
+    photoUploadInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = () => { document.body.style.backgroundImage = `url(${reader.result})`; }; reader.readAsDataURL(file); const formData = new FormData(); formData.append('file', file); fetch(`${backendUrl}/upload`, { method: 'POST', body: formData }).then(response => response.json()).then(data => { if (data.success) console.log('Upload successful!'); else console.error('Upload failed:', data.error); }).catch(error => console.error('Error uploading file:', error)); } });
 
 
-    // --- INITIALIZATION ---
-    function init() {
-        updateTimeAndGreeting(); setInterval(updateTimeAndGreeting, 1000);
-        
-        // NEW: This is the only change in the init function
-        getLocationAndFetchWeather(); 
-        setInterval(getLocationAndFetchWeather, 600000); // Refresh weather every 10 mins
-
-        startCountdown();
-        renderTodos();
-        loadBackgroundImage();
-    }
+    // START THE APP
     init();
+
 });
