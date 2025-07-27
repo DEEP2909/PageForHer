@@ -21,7 +21,11 @@ body {
     position: absolute; top: 20px; right: 20px; background: none; border: none;
     color: rgba(255, 255, 255, 0.7); font-size: 1.2rem; cursor: pointer;
 }
-.weather-widget h2, .countdown-widget h2, .todo-widget h2, .photos-widget h2 { margin-bottom: 15px; }
+.weather-widget h2, .countdown-widget h2, .todo-widget h2, .photos-widget h2 { 
+    margin-bottom: 15px;
+    color: #ff8ab4;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 .weather-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
 .temperature { font-size: 3rem; font-weight: 600; }
 .countdown-widget #event-date { opacity: 0.8; margin-bottom: 20px; }
