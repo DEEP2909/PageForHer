@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Poppins', sans-serif; color: #fff;
+    background-image: url('https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?q=80&w=2787&auto=format&fit=crop');
+    background-size: cover; background-position: center; background-attachment: fixed;
+    transition: background-image 0.5s ease-in-out; min-height: 100vh; padding: 20px;
+}
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1600px; margin: 0 auto; }
+.widget {
+    background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); border-radius: 20px;
+    padding: 25px; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+.greeting-widget { grid-column: 1 / -1; text-align: center; }
+.greeting-widget h1 { font-size: 2.5rem; font-weight: 600; color: #ff8ab4; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); }
+.todo-widget { grid-row: span 2; }
+.countdown-widget { position: relative; }
+.settings-btn {
+    position: absolute; top: 20px; right: 20px; background: none; border: none;
+    color: rgba(255, 255, 255, 0.7); font-size: 1.2rem; cursor: pointer;
+}
+.weather-widget h2, .countdown-widget h2, .todo-widget h2, .photos-widget h2 { 
+    margin-bottom: 15px;
+    color: #ff8ab4;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.weather-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+.temperature { font-size: 3rem; font-weight: 600; }
+.countdown-widget #event-date { opacity: 0.8; margin-bottom: 20px; }
+.countdown-timer { display: flex; justify-content: space-around; text-align: center; }
+.countdown-timer span { display: block; font-size: 2rem; font-weight: 700; }
+.countdown-timer div { font-size: 0.7rem; opacity: 0.8; }
+
+#todo-form, #add-event-form { display: flex; flex-wrap: wrap; gap: 10px; }
+#todo-input, #new-event-name, #new-event-date {
+    border: none; background: rgba(255, 255, 255, 0.2); border-radius: 10px;
+    padding: 10px 15px; color: #fff; font-size: 1rem; flex-grow: 1;
+}
+#todo-form button, #upload-btn, #add-event-form button {
+    border: none; background: #ff6b81; color: #fff; border-radius: 10px; cursor: pointer; font-weight: 600;
+}
+#todo-form button { font-size: 1.5rem; width: 40px; height: 40px; }
+#upload-btn, #add-event-form button { width: 100%; padding: 12px; font-size: 1rem; }
+#todo-list, #events-list { list-style: none; padding: 0; margin: 15px 0; max-height: 250px; overflow-y: auto;}
+#todo-list li, #events-list li {
+    background: rgba(0, 0, 0, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+#todo-list li.completed { text-decoration: line-through; opacity: 0.6; cursor: pointer; }
+.delete-btn { background: none; border: none; color: #fff; opacity: 0.5; cursor: pointer; font-size: 1rem; }
+.delete-btn:hover { opacity: 1; }
+
+/* Modal Styles */
+.modal-container {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
+    display: none; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+    background: rgba(40, 40, 40, 0.8); border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 30px; border-radius: 20px; width: 90%; max-width: 500px;
+    position: relative; color: #fff;
+}
+.close-modal-btn {
+    position: absolute; top: 15px; right: 20px; background: none; border: none;
+    color: #fff; font-size: 2rem; cursor: pointer;
+}
+#add-event-form h3 { width: 100%; margin-bottom: 5px; }
+.upload-note { font-size: 0.8rem; text-align: center; margin-top: 10px; opacity: 0.7; }
+
+@media (max-width: 768px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .todo-widget { grid-row: auto; }
+}

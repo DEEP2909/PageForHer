@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Dashboard for Prachi</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <main class="dashboard-grid">
+
+        <section class="widget greeting-widget">
+            <h1 id="greeting">💖 Good Afternoon, Prachi! 💖</h1>
+            <p id="clock">02:44:19 PM • Sunday, July 27, 2025</p>
+        </section>
+
+        <section class="widget weather-widget">
+            <h2><i class="fa-solid fa-cloud-sun"></i> Weather</h2>
+            <div class="weather-info">
+                <p class="temperature" id="temperature">--°C</p>
+                <p class="condition" id="condition">Loading...</p>
+            </div>
+            <p class="location"><i class="fa-solid fa-location-dot"></i> Bhopal, India</p>
+        </section>
+
+        <section class="widget countdown-widget">
+            <button id="settings-btn" class="settings-btn" aria-label="Manage Dates"><i class="fa-solid fa-gear"></i></button>
+            <h2 id="event-title">Next Special Day</h2>
+            <p id="event-date">Calculating...</p>
+            <div class="countdown-timer">
+                <div><span id="days">--</span>DAYS</div>
+                <div><span id="hours">--</span>HOURS</div>
+                <div><span id="mins">--</span>MINS</div>
+                <div><span id="secs">--</span>SECS</div>
+            </div>
+        </section>
+
+        <section class="widget todo-widget">
+            <h2><i class="fa-solid fa-list-check"></i> My To-Do List</h2>
+            <form id="todo-form">
+                <input type="text" id="todo-input" placeholder="Add a new task..." autocomplete="off">
+                <button type="submit" aria-label="Add Task">+</button>
+            </form>
+            <ul id="todo-list"></ul>
+        </section>
+
+        <section class="widget photos-widget">
+             <h2><i class="fa-solid fa-image"></i> Background</h2>
+             <button id="upload-btn">Upload New Photo</button>
+             <input type="file" id="photo-upload" accept="image/*" hidden>
+             <p class="upload-note">Your photo is saved in your browser.</p>
+        </section>
+
+    </main>
+    
+    <div id="modal-container" class="modal-container">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="close-modal-btn">&times;</button>
+            <h2>Manage Special Dates</h2>
+            <ul id="events-list"></ul>
+            <form id="add-event-form">
+                <h3>Add New Date</h3>
+                <input type="text" id="new-event-name" placeholder="Event Name" required>
+                <input type="date" id="new-event-date" required>
+                <button type="submit">Add Event</button>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
