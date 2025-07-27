@@ -3,6 +3,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: 'Poppins', sans-serif; color: #fff;
+    background-color: #2c3e50; /* Fallback color */
     background-image: url('https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?q=80&w=2787&auto=format&fit=crop');
     background-size: cover; background-position: center; background-attachment: fixed;
     transition: background-image 0.5s ease-in-out; min-height: 100vh; padding: 20px;
@@ -20,11 +21,7 @@ body {
     position: absolute; top: 20px; right: 20px; background: none; border: none;
     color: rgba(255, 255, 255, 0.7); font-size: 1.2rem; cursor: pointer;
 }
-.weather-widget h2, .countdown-widget h2, .todo-widget h2, .photos-widget h2 { 
-    margin-bottom: 15px;
-    color: #ff8ab4;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+.weather-widget h2, .countdown-widget h2, .todo-widget h2, .photos-widget h2 { margin-bottom: 15px; }
 .weather-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
 .temperature { font-size: 3rem; font-weight: 600; }
 .countdown-widget #event-date { opacity: 0.8; margin-bottom: 20px; }
