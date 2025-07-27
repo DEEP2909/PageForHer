@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const backendUrl = 'https://deep00492.pythonanywhere.com/';
+    const backendUrl = 'http://deep00492.pythonanywhere.com/';
     const userName = "Prachi";
     let countdownInterval;
 
