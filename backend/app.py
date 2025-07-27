@@ -33,11 +33,11 @@ def read_db():
     """Reads the entire database from the JSON file."""
     if not os.path.exists(DB_FILE):
         return DEFAULT_DATA
-    with open(DB_FILE, 'r') as f:
-        try:
+    try:
+        with open(DB_FILE, 'r') as f:
             return json.load(f)
-        except json.JSONDecodeError:
-            return DEFAULT_DATA
+    except (json.JSONDecodeError, FileNotFoundError):
+        return DEFAULT_DATA
 
 def write_db(data):
     """Writes the entire database to the JSON file."""
@@ -45,8 +45,6 @@ def write_db(data):
         json.dump(data, f, indent=4)
 
 # --- API Endpoints ---
-
-# Endpoint for the background image
 @app.route('/background', methods=['GET'])
 def get_background():
     db = read_db()
@@ -73,7 +71,6 @@ def upload_file():
     
     return jsonify({'success': True, 'url': db['background_url']})
 
-# Endpoints for the To-Do list
 @app.route('/todos', methods=['GET'])
 def get_todos():
     db = read_db()
@@ -87,7 +84,6 @@ def update_todos():
     write_db(db)
     return jsonify({'success': True})
 
-# Endpoints for Special Events
 @app.route('/events', methods=['GET'])
 def get_events():
     db = read_db()
@@ -105,4 +101,5 @@ def update_events():
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
+    # The host='0.0.0.0' makes it accessible from your local network
     app.run(host='0.0.0.0', port=5000, debug=True)
