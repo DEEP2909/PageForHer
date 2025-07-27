@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const backendUrl = 'https://dashboard-backend-2ff0.onrender.com/';
+    const backendUrl = 'https://dashboard-backend-2ff0.onrender.com'; // Use your actual Render URL
     const userName = "Prachi";
     let countdownInterval;
 
@@ -63,34 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.textContent = todo.text;
             li.className = todo.completed ? 'completed' : '';
-            li.onclick = () => {
-                todos[index].completed = !todos[index].completed;
-                renderTodos();
-                syncTodos();
-            };
+            li.onclick = () => { todos[index].completed = !todos[index].completed; renderTodos(); syncTodos(); };
             const deleteBtn = document.createElement('button');
             deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
             deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation();
-                todos.splice(index, 1);
-                renderTodos();
-                syncTodos();
-            };
+            deleteBtn.onclick = (e) => { e.stopPropagation(); todos.splice(index, 1); renderTodos(); syncTodos(); };
             li.appendChild(deleteBtn);
             todoList.appendChild(li);
         });
     }
-
     todoForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const text = todoInput.value.trim();
-        if (text) {
-            todos.push({ text: text, completed: false });
-            renderTodos();
-            syncTodos();
-            todoInput.value = '';
-        }
+        if (text) { todos.push({ text: text, completed: false }); renderTodos(); syncTodos(); todoInput.value = ''; }
     });
 
     function renderEventsList() {
@@ -107,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
             deleteBtn.className = 'delete-btn';
             deleteBtn.onclick = () => {
-                specialEvents = specialEvents.filter(e => e.name !== event.name && e.date !== event.date);
+                specialEvents = specialEvents.filter(e => !(e.name === event.name && e.date === event.date));
                 renderEventsList();
                 syncEvents();
             };
@@ -115,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
             eventsListEl.appendChild(li);
         });
     }
-
     addEventForm.addEventListener('submit', (e) => {
         e.preventDefault();
         if (newEventNameInput.value.trim() && newEventDateInput.value) {
@@ -125,28 +109,38 @@ document.addEventListener('DOMContentLoaded', () => {
             addEventForm.reset();
         }
     });
+    settingsBtn.addEventListener('click', () => { renderEventsList(); modalContainer.style.display = 'flex'; });
+    closeModalBtn.addEventListener('click', () => { modalContainer.style.display = 'none'; });
+    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) modalContainer.style.display = 'none'; });
 
     uploadBtn.addEventListener('click', () => photoUploadInput.click());
     photoUploadInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
+        uploadBtn.textContent = 'Uploading...';
+        uploadBtn.disabled = true;
         const formData = new FormData();
         formData.append('file', file);
-
         fetch(`${backendUrl}/upload`, { method: 'POST', body: formData })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    document.body.style.backgroundImage = `url(${backendUrl}${data.url})`;
-                } else { console.error('Upload failed:', data.error); }
+                if (data.success && data.url) {
+                    document.body.style.backgroundImage = `url(${data.url})`;
+                } else {
+                    console.error('Upload failed:', data.error);
+                    alert('Upload failed. Please try again.');
+                }
             })
-            .catch(error => console.error('Error uploading file:', error));
+            .catch(error => {
+                console.error('Error uploading file:', error);
+                alert('An error occurred during upload.');
+            })
+            .finally(() => {
+                uploadBtn.textContent = 'Upload New Photo';
+                uploadBtn.disabled = false;
+            });
     });
 
-    settingsBtn.addEventListener('click', () => { renderEventsList(); modalContainer.style.display = 'flex'; });
-    closeModalBtn.addEventListener('click', () => { modalContainer.style.display = 'none'; });
-    modalContainer.addEventListener('click', (e) => { if (e.target === modalContainer) modalContainer.style.display = 'none'; });
 
     // --- CORE LOGIC FUNCTIONS ---
     function updateTimeAndGreeting() {
@@ -154,38 +148,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const hour = now.getHours();
         const heart = '💖';
         let greetingText;
-        if (hour < 12) {
-            greetingText = `${heart} Good Morning, ${userName}! ${heart} <i class="fa-solid fa-mug-hot"></i>`;
-        } else if (hour < 18) {
-            greetingText = `${heart} Good Afternoon, ${userName}! ${heart} <i class="fa-solid fa-sun"></i>`;
-        } else {
-            greetingText = `${heart} Good Evening, ${userName}! ${heart} <i class="fa-solid fa-moon"></i>`;
-        }
+        if (hour < 12) { greetingText = `${heart} Good Morning, ${userName}! ${heart} <i class="fa-solid fa-mug-hot"></i>`; }
+        else if (hour < 18) { greetingText = `${heart} Good Afternoon, ${userName}! ${heart} <i class="fa-solid fa-sun"></i>`; }
+        else { greetingText = `${heart} Good Evening, ${userName}! ${heart} <i class="fa-solid fa-moon"></i>`; }
         greetingEl.innerHTML = greetingText;
         const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         clockEl.textContent = `${timeString} • ${dateString}`;
     }
 
-    // --- CORE LOGIC FUNCTIONS (Weather Section) ---
-
     function getLocationAndFetchWeather() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                // Success Callback
-                (position) => {
-                    getWeather(position.coords.latitude, position.coords.longitude);
-                },
-                // Error Callback
+                (position) => { getWeather(position.coords.latitude, position.coords.longitude); },
                 (error) => {
                     console.error(`Geolocation Error (${error.code}): ${error.message}`);
                     locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Bhopal, India (Default)`;
-                    // If permission is denied, fall back to Bhopal's weather
                     getWeather(23.2599, 77.4126);
                 }
             );
         } else {
-            console.log("Geolocation is not supported by this browser. Defaulting to Bhopal.");
+            console.log("Geolocation is not supported. Defaulting to Bhopal.");
             locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Bhopal, India (Default)`;
             getWeather(23.2599, 77.4126);
         }
@@ -195,44 +178,22 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&timezone=auto`;
             const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Weather API responded with status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Weather API responded with status: ${response.status}`);
             const data = await response.json();
-            
             temperatureEl.textContent = `${Math.round(data.current.temperature_2m)}°C`;
             const weather = getWeatherDescription(data.current.weather_code, data.current.is_day);
             conditionEl.textContent = weather.text;
             document.querySelector('.weather-widget h2 i').className = weather.icon;
-
-            // Only update the location text if it wasn't a fallback
-            if (lat !== 23.2599) {
-                 locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`;
-            }
-
-        } catch (error) {
-            console.error("Weather fetch error:", error);
-            temperatureEl.textContent = "N/A";
-            conditionEl.textContent = "Error";
-        }
+            if (lat !== 23.2599) { locationEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> Your Location`; }
+        } catch (error) { console.error("Weather fetch error:", error); temperatureEl.textContent = "N/A"; conditionEl.textContent = "Error"; }
     }
 
     function getWeatherDescription(code, isDay) {
-        // isDay = 1 for day, 0 for night. Handle night icons first.
         if (code <= 1 && !isDay) return { text: "Clear Night", icon: "fa-solid fa-moon" };
-
-        const descriptions = {
-            0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" },
-            2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" },
-            45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" },
-            51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" },
-            61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" },
-            80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" },
-            95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" },
-        };
+        const descriptions = { 0: { text: "Clear Sky", icon: "fa-solid fa-sun" }, 1: { text: "Mainly Clear", icon: "fa-solid fa-sun" }, 2: { text: "Partly Cloudy", icon: "fa-solid fa-cloud-sun" }, 3: { text: "Overcast", icon: "fa-solid fa-cloud" }, 45: { text: "Fog", icon: "fa-solid fa-smog" }, 48: { text: "Rime Fog", icon: "fa-solid fa-smog" }, 51: { text: "Light Drizzle", icon: "fa-solid fa-cloud-rain" }, 53: { text: "Drizzle", icon: "fa-solid fa-cloud-rain" }, 55: { text: "Dense Drizzle", icon: "fa-solid fa-cloud-rain" }, 61: { text: "Slight Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 63: { text: "Moderate Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 65: { text: "Heavy Rain", icon: "fa-solid fa-cloud-showers-heavy" }, 80: { text: "Slight Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 81: { text: "Moderate Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 82: { text: "Violent Showers", icon: "fa-solid fa-cloud-showers-heavy" }, 95: { text: "Thunderstorm", icon: "fa-solid fa-cloud-bolt" }, };
         return descriptions[code] || { text: "Unknown", icon: "fa-solid fa-question-circle" };
     }
-    
+
     function findNextUpcomingEvent() {
         const now = new Date();
         if (specialEvents.length === 0) return null;
@@ -264,46 +225,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     async function init() {
-        // Run time and weather updates immediately
-        updateTimeAndGreeting(); 
-        setInterval(updateTimeAndGreeting, 1000);
-        getLocationAndFetchWeather();
-        setInterval(getLocationAndFetchWeather, 600000);
+        updateTimeAndGreeting(); setInterval(updateTimeAndGreeting, 1000);
+        getLocationAndFetchWeather(); setInterval(getLocationAndFetchWeather, 600000);
 
-        // --- Fetch data from backend individually for robustness ---
-
-        // Fetch Events
+        // Fetch all data from the backend
         try {
-            const eventsRes = await fetch(`${backendUrl}/events`);
+            const [eventsRes, todosRes, backgroundRes] = await Promise.all([
+                fetch(`${backendUrl}/events`),
+                fetch(`${backendUrl}/todos`),
+                fetch(`${backendUrl}/background`)
+            ]);
+
             specialEvents = await eventsRes.json();
-            startCountdown(); // Start countdown as soon as we have event data
-        } catch (error) {
-            console.error("Failed to fetch special events:", error);
-            startCountdown(); // Attempt to start countdown even on failure (will show 'No events')
-        }
-
-        // Fetch To-Dos
-        try {
-            const todosRes = await fetch(`${backendUrl}/todos`);
             todos = await todosRes.json();
-            renderTodos(); // Render todos as soon as we have the data
-        } catch (error) {
-            console.error("Failed to fetch todos:", error);
-            renderTodos(); // Attempt to render even on failure (will show 'No tasks')
-        }
-
-        // Fetch Background
-        try {
-            const backgroundRes = await fetch(`${backendUrl}/background`);
             const backgroundData = await backgroundRes.json();
-            if (backgroundData.url) {
-                document.body.style.backgroundImage = `url(${backendUrl}${backgroundData.url})`;
+            
+            // *** THE FIX IS HERE ***
+            // Use the full URL directly from the backend response
+            if (backgroundData && backgroundData.url) {
+                document.body.style.backgroundImage = `url(${backgroundData.url})`;
             }
+            
+            renderTodos();
+            startCountdown();
         } catch (error) {
-            console.error("Failed to fetch background:", error);
+            console.error("Failed to initialize dashboard data:", error);
         }
     }
-    
     
     init();
 });
