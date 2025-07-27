@@ -242,8 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     function loadBackgroundImage() {
-        const savedImage = localStorage.getItem('userBackgroundImage');
-        if (savedImage) document.body.style.backgroundImage = `url(${savedImage})`;
+        // This is your new permanent, custom background URL from Imgur/Postimage
+        const customPermanentBackground = 'https://i.postimg.cc/1XtJzqq0/us1234.jpg'; // <-- PASTE YOUR DIRECT LINK HERE
+
+        const locallyUploadedImage = localStorage.getItem('userBackgroundImage');
+
+        if (locallyUploadedImage) {
+            // If the user has uploaded an image on THIS device, use it.
+            document.body.style.backgroundImage = `url(${locallyUploadedImage})`;
+        } else if (customPermanentBackground) {
+            // Otherwise, use your custom permanent background.
+            document.body.style.backgroundImage = `url(${customPermanentBackground})`;
+        }
+        // If neither exists, it will use the default from the CSS file.
     }
 
 
